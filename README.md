@@ -1,1 +1,1 @@
-Simple type game
+Simples type game
