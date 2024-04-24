@@ -1,103 +1,108 @@
-const canvas = document.querySelector('#canvas')
-const ctx = canvas.getContext('2d');
 
-let palavraCount = 0;
-let listWord = ['pink','yellow','black','white','green'] 
-let mover = 0;
-let run = false;
-function palavraAtual(listWord){
-    if(mover == canvas.width+listWord[palavraCount].length || listWord[palavraCount] == palavraEscrita){
-        ++palavraCount;
-        if(palavraCount == listWord.length){
-            palavraCount = 0
+class CanvasGame {
+    constructor(canvasId) {
+        this.canvas = document.getElementById(canvasId);
+        this.ctx = this.canvas.getContext('2d');
+        this.wordIndex = 0;
+        this.wordPositionX = 0;
+        this.words;
+        this.isRunning = false;
+        this.typedWord = '';
+        fetch('../js/words.json')
+            .then(res => res.json())
+            .then(data => {
+                this.words = data.listWord
+            })
+        this.init();
+    }
+
+    init() {
+        this.addEventListeners();
+        this.intervalId = setInterval(() => this.update(), 10);
+    }
+
+    addEventListeners() {
+        document.addEventListener("keydown", (event) => this.handleKeyDown(event));
+    }
+
+    startMenu() {
+        this.drawTextTyping('start', 450, this.canvas.height / 2);
+        this.checkTypedWord('start', 450)
+        if (this.typedWord === 'start') {
+            this.isRunning = true;
+            this.typedWord = '';
         }
-        mover = 0;
-        palavraEscrita = ''
-        
-    }
-    return listWord[palavraCount];
-}
-function Desenhar() {   
-    ctx.beginPath()
-    ctx.font = "24px serif";
-    ctx.fillStyle = 'white'
-    ctx.fillText(palavraAtual(listWord), mover, canvas.height/2);
-
-    corrigirCaracter(palavraAtual(listWord),mover);
-    ++mover;
-}
-function menu(){
-    ctx.beginPath()
-    ctx.font = "24px serif";
-    ctx.fillStyle = 'white'
-    ctx.textBaseline = 'middle'
-    ctx.fillText('start',450,canvas.height/2);
-
-    corrigirCaracter('start',450)
-
-    if(palavraEscrita == 'start'){
-        run = true
-        palavraEscrita = ''
     }
 
-}
-function LimparTela() {
-    ctx.fillStyle = "black";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-}
-function Iniciar() {
-    return setInterval(Atualizar, 10);
-}
-function Atualizar() {
-    LimparTela();
-    mostrarInput()
-    if(run){
-        Desenhar();
-    }else{
-        menu()
+    drawTextTyping(text, x, y, color = 'white') {
+        this.ctx.beginPath();
+        this.ctx.font = "24px serif";
+        this.ctx.fillStyle = color;
+        this.ctx.fillText(text, x, y);
     }
-}
 
-function corrigirCaracter(palavra,posX,posY){
-    ctx.beginPath()    
-    ctx.font = "24px serif";
-    if(palavraEscrita.length){
-        for(let i = 0; i < palavraEscrita.length;++i){
-            if(palavra.charAt(i) == palavraEscrita.charAt(i)){
-                ctx.fillStyle = 'green';   
-                ctx.fillText(palavraEscrita, posX, canvas.height/2);
-            }else{
-                ctx.fillStyle = 'red';
-                ctx.fillText(palavraEscrita, posX, canvas.height/2);
+    drawWord() {
+        const currentWord = this.words[this.wordIndex];
+        this.drawTextTyping(currentWord, this.wordPositionX, this.canvas.height / 2);
+        this.checkTypedWord(currentWord, this.wordPositionX);
+        this.wordPositionX++;
+        if (this.wordPositionX === this.canvas.width + currentWord.length || currentWord === this.typedWord) {
+            if(currentWord !== this.typedWord) this.gameOver()
+            this.resetVariables();
+        }
+    }
+
+    checkTypedWord(word, wordPositionX) {
+        for (let i = 0; i < this.typedWord.length; ++i) {
+            if (word.charAt(i) !== this.typedWord.charAt(i)) {
+                this.ctx.fillStyle = 'red';
                 break;
+            } else {
+                this.ctx.fillStyle = 'green';
             }
-            
+        }
+        this.ctx.beginPath();
+        this.ctx.font = "24px serif";
+        this.ctx.fillText(this.typedWord, wordPositionX, this.canvas.height / 2);
+    }
+
+    clearCanvas() {
+        this.ctx.fillStyle = "black";
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+    gameOver(){
+         this.startMenu()
+         this.isRunning = false
+    }
+    resetVariables(){
+        this.wordIndex = (this.wordIndex + 1) % this.words.length;
+        this.wordPositionX = 0;
+        this.typedWord = '';
+    }
+
+    handleKeyDown(event) {
+        if (/^[a-zA-Z]$/.test(event.key)) {
+            this.typedWord += event.key;
+        }
+        if (event.key === 'Backspace') {
+            this.typedWord = this.typedWord.slice(0, this.typedWord.length - 1);
+        }
+        if (event.key === ' ') {
+            this.typedWord += ' ';
+        }
+        if (event.key === '1') {
+            this.typedWord = '';
         }
     }
-
-}
-Iniciar()
-
-let palavraEscrita = ''
-function mostrarInput(){
-    ctx.beginPath()
-    ctx.font = "24px serif";
-    ctx.fillStyle = 'white';
-    ctx.fillText(palavraEscrita, 400, 390);
-}
-
-document.addEventListener("keydown",(event)=>{
-    console.log(event.key)
-    if (/^[a-zA-Z]$/.test(event.key)) {
-        palavraEscrita += event.key
-        console.log(palavraEscrita)   
-    }if('Backspace' == event.key){
-       palavraEscrita= palavraEscrita.slice(0,palavraEscrita.length-1)
-        console.log(palavraEscrita)
-    }if(' ' == event.key){
-        palavraEscrita += ' ';
-    }if('1' == event.key){
-        palavraEscrita = '';
+    
+    update() {
+        this.clearCanvas();
+        if (this.isRunning) {
+            this.drawWord();
+        } else {
+            this.startMenu();
+        }
     }
-})
+}
+
+const game = new CanvasGame('canvas');
