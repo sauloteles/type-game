@@ -8,9 +8,9 @@ canvas{
     background-color: black;
 }
 body{
-    background-color: bisque;
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
+    background-color: rgb(207, 206, 206);
 }
