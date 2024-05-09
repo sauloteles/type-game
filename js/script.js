@@ -8,6 +8,8 @@ class CanvasGame {
         this.words;
         this.isRunning = false;
         this.typedWord = '';
+        this.speed = 10;
+        this.i = 1;
         fetch('../js/words.json')
             .then(res => res.json())
             .then(data => {
@@ -18,7 +20,7 @@ class CanvasGame {
 
     init() {
         this.addEventListeners();
-        this.intervalId = setInterval(() => this.update(), 10);
+        this.intervalId = setInterval(() => this.update(), this.speed);
     }
 
     addEventListeners() {
@@ -45,9 +47,10 @@ class CanvasGame {
         const currentWord = this.words[this.wordIndex];
         this.drawTextTyping(currentWord, this.wordPositionX, this.canvas.height / 2);
         this.checkTypedWord(currentWord, this.wordPositionX);
-        this.wordPositionX++;
+        this.wordPositionX+= this.i;
         if (this.wordPositionX === this.canvas.width + currentWord.length || currentWord === this.typedWord) {
-            if(currentWord !== this.typedWord) this.gameOver()
+            if(currentWord !== this.typedWord) this.gameOver();
+            this.i +=0.5;
             this.resetVariables();
         }
     }
@@ -73,11 +76,13 @@ class CanvasGame {
     gameOver(){
          this.startMenu()
          this.isRunning = false
+         this.i = 1;  
     }
     resetVariables(){
         this.wordIndex = (this.wordIndex + 1) % this.words.length;
         this.wordPositionX = 0;
         this.typedWord = '';
+        
     }
 
     handleKeyDown(event) {
